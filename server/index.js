@@ -19,6 +19,7 @@ const GetGraphs = require('./routes/getGraphData')
 const ReadSms = require('./routes/readSms')
 const Manual = require('./routes/manual')
 const GeneratePdf = require('./routes/generatepdf')
+const AffliatesData = require('./routes/affliatesData')
 
 
 require('dotenv').config()
@@ -81,6 +82,7 @@ app.use('/api/getGraphs',GetGraphs)
 app.use('/api/readsms',ReadSms)
 app.use('/api/manual',Manual)
 app.use('/api/generatepdf',GeneratePdf)
+app.use('/api/affliates',AffliatesData)
 
 
 
