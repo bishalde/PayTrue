@@ -12,7 +12,6 @@ router.get("/",async (req, res) => {
 
 router.post("/", async (req, res) => {
   const transactionData = req.body;
-  console.log(transactionData);
   try {
     const wallet = await Wallet.findOne({ uid: transactionData.uid });
     if (!wallet) {

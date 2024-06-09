@@ -11,7 +11,6 @@ router.post("/", async (req, res) => {
   const { email, password } = req.body;
   try {
     const user = await Users.findOne({ email });
-    console.log(user);
     if (user) {
       const isMatch = await user.comparePassword(password);
       if (isMatch) {

@@ -20,6 +20,7 @@ const ReadSms = require('./routes/readSms')
 const Manual = require('./routes/manual')
 const GeneratePdf = require('./routes/generatepdf')
 const AffliatesData = require('./routes/affliatesData')
+const CoinsTransx = require('./routes/CoinsTransx')
 
 
 require('dotenv').config()
@@ -83,6 +84,7 @@ app.use('/api/readsms',ReadSms)
 app.use('/api/manual',Manual)
 app.use('/api/generatepdf',GeneratePdf)
 app.use('/api/affliates',AffliatesData)
+app.use('/api/coinstransx',CoinsTransx)
 
 
 

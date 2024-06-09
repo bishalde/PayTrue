@@ -11,11 +11,6 @@ router.get("/", async (req, res) => {
             image:"https://couponswala.com/blog/wp-content/uploads/2021/12/myntra-upcomming-sale-min-1.png"
         },
         {
-            name:"Amazon",
-            link:"https://www.amazon.in/",
-            image:"https://trak.in/wp-content/uploads/2020/08/IMG_20200808_191750.jpg"
-        },
-        {
             name:"Swiggy",
             link:"https://www.swiggy.com/",
             image:"https://im.whatshot.in/img/2021/Aug/swiggy-header-3-1628856817.jpg"

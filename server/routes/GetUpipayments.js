@@ -11,7 +11,6 @@ router.get("/", async (req, res) => {
 
 router.post("/", async (req, res) => {
   Data=req.body;
-  console.log("upi data",Data)
   try {
     const fromWallet = await Wallet.findOne({ uid: Data.uid });
     const fromUser = await Users.findOne({ _id: Data.uid });
@@ -83,8 +82,6 @@ router.post("/", async (req, res) => {
   
    
   } catch (error) {
-    console.log("Errorrorororor")
-    console.log(error);
     res.status(500).json({ message: error.message,success: false });
   }
 });

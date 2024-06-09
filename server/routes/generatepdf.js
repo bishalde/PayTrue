@@ -7,7 +7,7 @@ const Transaction = require('../models/transactionModel');
 
 const router = express.Router();
 
-router.use('/data', express.static(path.join(__dirname, 'data')));
+router.use('/data', express.static(path.join(__dirname, '..', 'data')));
 
 router.post('/', async (req, res) => {
     const { uid } = req.body;
@@ -18,7 +18,7 @@ router.post('/', async (req, res) => {
         const sixMonthlySummary = getSummary(transactions, '6-month');
         const yearlySummary = getSummary(transactions, 'year');
 
-        const doc = new PDFDocument();
+        const doc = new PDFDocument({ margin: 40 });
         const fileName = `tx${uid}.pdf`;
         const filePath = path.join(__dirname, '..', 'data', fileName);
 
@@ -30,26 +30,17 @@ router.post('/', async (req, res) => {
         doc.pipe(writeStream);
 
         // Add content to PDF
-        doc.fontSize(16).text('Transaction Summary', { align: 'center' });
-        doc.moveDown();
-
+        addCoverPage(doc, uid);
         addTransactionTable(doc, transactions);
-        doc.addPage();
-
         addSummaryDetails(doc, 'Monthly Summary', monthlySummary);
-        doc.addPage();
-
         addSummaryDetails(doc, '6-Month Summary', sixMonthlySummary);
-        doc.addPage();
-
         addSummaryDetails(doc, 'Yearly Summary', yearlySummary);
 
         // Finalize the PDF and end the stream
         doc.end();
 
         writeStream.on('finish', () => {
-            const fileUrl = `http://localhost:3000/data/${fileName}`;
-            res.status(200).json({ message: 'PDF generated successfully', url: fileUrl });
+            res.status(201).json({ message: 'PDF generated successfully', url: fileName });
         });
 
     } catch (error) {
@@ -83,59 +74,82 @@ function getSummary(transactions, period) {
     return summary;
 }
 
-function addTransactionTable(doc, transactions) {
-    doc.fontSize(18).text('Transaction Details', { underline: true }).moveDown();
+function addCoverPage(doc, uid) {
+    doc.fontSize(28).fillColor('#003366').text('Transaction Summary Report', {  
+        align: 'center',
+        underline: true
+    }).moveDown(2);
 
-    const tableTop = doc.y + 20;
-    const tableLeft = 50;
-    const rowHeight = 30;
+    doc.fontSize(16).fillColor('#003366').text(`Generated for User ID: ${uid}`, {
+        align: 'center'
+    }).moveDown(2);
+ 
+    doc.fontSize(14).fillColor('#003366').text(`Report Generated on: ${moment().format('MMMM Do YYYY, h:mm:ss a')}`, {
+        align: 'center'
+    }).moveDown(2);
+
+    // const logoPath = path.join(__dirname, 'logo.png');
+    // if (fs.existsSync(logoPath)) {
+    //     doc.image(logoPath, (doc.page.width - 100) / 2, doc.y, { width: 100 }).moveDown(2);
+    // }
+
+    doc.fontSize(30).fillColor('#003366').text(`PayTrue`, {
+        align: 'center'
+    }).moveDown(8);
+
+    
+    doc.moveDown(2);
+    doc.addPage();
+}
+
+function addTransactionTable(doc, transactions) {
+    doc.fontSize(18).fillColor('#003366').text('Transaction Details', { underline: true }).moveDown();
+
+    const tableTop = doc.y;
+    const tableLeft = 40;
+    const rowHeight = 40;
     const colWidth = 100;
-    const headerHeight = 50;
+    const headerHeight = 25;
 
     const headers = ['Date', 'Type', 'Amount', 'Category', 'Description'];
 
-    doc.lineWidth(0);
+    doc.lineWidth(2);
     doc.lineCap('butt')
        .moveTo(tableLeft, tableTop)
        .lineTo(tableLeft + colWidth * headers.length, tableTop)
        .stroke();
 
-    doc.font('Helvetica-Bold').fontSize(14);
+    doc.font('Helvetica-Bold').fontSize(12).fillColor('#FFFFFF');
     headers.forEach((header, i) => {
-        doc.text(header, tableLeft + colWidth * i, tableTop + 10);
+        doc.fillColor('#003366').rect(tableLeft + colWidth * i, tableTop, colWidth, headerHeight).fill();
+        doc.fillColor('#FFFFFF').text(header, tableLeft + colWidth * i + 5, tableTop + 8);
     });
 
-    doc.font('Helvetica').fontSize(12);
+    doc.font('Helvetica').fontSize(10).fillColor('black');
     transactions.forEach((transaction, index) => {
         const rowIndex = index + 1;
-        doc.text(moment(transaction.date).format('YYYY-MM-DD'), tableLeft + colWidth * 0, tableTop + headerHeight + rowHeight * rowIndex);
-        doc.text(transaction.type, tableLeft + colWidth * 1, tableTop + headerHeight + rowHeight * rowIndex);
-        doc.text(transaction.amount.toString(), tableLeft + colWidth * 2, tableTop + headerHeight + rowHeight * rowIndex);
-        doc.text(transaction.category || '-', tableLeft + colWidth * 3, tableTop + headerHeight + rowHeight * rowIndex);
-        doc.text(transaction.description || '-', tableLeft + colWidth * 4, tableTop + headerHeight + rowHeight * rowIndex);
+        const rowY = tableTop + headerHeight + rowHeight * rowIndex;
+        doc.fillColor(index % 2 === 0 ? '#F0F0F0' : '#FFFFFF')
+           .rect(tableLeft, rowY, colWidth * headers.length, rowHeight)
+           .fill();
+
+        doc.fillColor('black').text(moment(transaction.date).format('YYYY-MM-DD'), tableLeft + colWidth * 0 + 5, rowY + 5);
+        doc.text(transaction.type, tableLeft + colWidth * 1 + 5, rowY + 5);
+        doc.text(transaction.amount.toString(), tableLeft + colWidth * 2 + 5, rowY + 5);
+        doc.text(transaction.category || '-', tableLeft + colWidth * 3 + 5, rowY + 5);
+        doc.text(transaction.description || '-', tableLeft + colWidth * 4 + 5, rowY + 5);
     });
 
-    doc.moveTo(tableLeft, tableTop + headerHeight)
-       .lineTo(tableLeft, tableTop + headerHeight + rowHeight * (transactions.length + 1))
-       .stroke();
-
-    for (let i = 0; i <= headers.length; i++) {
-        doc.moveTo(tableLeft + colWidth * i, tableTop + headerHeight)
-           .lineTo(tableLeft + colWidth * i, tableTop + headerHeight + rowHeight * (transactions.length + 1))
-           .stroke();
-    }
-
-    // Move cursor to the bottom of the table
-    doc.moveDown(transactions.length + 1);
+    doc.moveDown(2);
 }
 
 function addSummaryDetails(doc, title, summary) {
-    doc.fontSize(18).text(title, { underline: true }).moveDown();
+    doc.fontSize(18).fillColor('#003366').text(title, { underline: true }).moveDown();
 
+    doc.fontSize(12).fillColor('black');
     for (const [key, value] of Object.entries(summary)) {
-        doc.fontSize(14).text(`${key}:`).moveDown();
-        doc.fontSize(12).text(`Total Debit: ${value.debit}`).moveDown();
-        doc.text(`Total Credit: ${value.credit}`).moveDown();
+        doc.fontSize(14).fillColor('#003366').text(`${key}:`, { continued: true }).moveDown(0.5);
+        doc.fontSize(12).fillColor('black').text(` Total Debit: ${value.debit} | Total Credit: ${value.credit}`).moveDown(1);
     }
 }
 
